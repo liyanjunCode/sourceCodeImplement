@@ -27,7 +27,7 @@
     initState函数， 进行一些数据的初始化过程，initState函数定义在./initState文件夹下
 
 ### 2.initState 函数状态的初始化过程及对象的数据侦测
-    initState初始化过程包括props、methods、 data、computed、watched，初始化的过程有一定的逻辑顺序（找资料扩充）, 此次主要实现initData的过程
+    initState初始化过程包括props、methods、 data、computed、watched，初始化的过程有一定的逻辑顺序，比如先初始化props，在data中中就能使用props， watch的初始化在最后， watch中就能使用props和data数据, 此次主要实现initData的过程
 
     //initState函数的实现，在./initState.js中
     ```
