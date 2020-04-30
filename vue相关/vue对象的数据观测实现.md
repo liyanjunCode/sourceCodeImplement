@@ -186,7 +186,7 @@
 
     protoAgument和copyAgument实现
     ```
-    // 挂载到原型
+    // 挂载到value原型
     function protoAgument (val, proto) {
         val.__proto__ = proto
     }
@@ -197,7 +197,7 @@
         } 
     }
     ```
-    当浏览器支持__proto__属性时， 直接将拦截器覆盖原型方法即可， 当不支持__proto__属性时，就进行比较暴力的挂载，直接把push，pop等方法挂载到value上赋值为拦截器，挂载完拦截器后，用observeArray循环遍历数组，调用observe进行数据侦测
+    当浏览器支持__proto__属性时， 直接将拦截器覆盖当前值原型方法即可（不可对Array原型污染）， 当不支持__proto__属性时，就进行比较暴力的挂载，直接把push，pop等方法挂载到value上赋值为拦截器，挂载完拦截器后，用observeArray循环遍历数组，调用observe进行数据侦测
 
     //下面最后一步处理拦截器中如何对新增数据进行侦测
    ```
