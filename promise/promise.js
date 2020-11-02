@@ -2,17 +2,40 @@
 const FULFILLED = "FULFILLED";
 const REJECTED = "REJECTED";
 const PENDING = "PENDING";
-const resolvePromise = (promise, x, resolve, reject) => {
-  // if (x === promise) { reject("") }
-
-  if ((typeof x === 'object' && x != null) || typeof x === "function") {
-    // 如果是function 就是promise
-    if (typeof x === "function") {
+const isPromise = (val) => {
+  if ((typeof val === "object" && val != null) || typeof val === "function") {
+    if (typeof val.then === "function") {
+      return true;
+    }
+  }
+}
+const resolvePromise = (promise2, x, resolve, reject) => {
+  // promise和x不能相等， 因为同一个promise不可能等待他自己本身的结果
+  if (x === promise2) { reject("cant renturn same promise") }
+  if ((typeof x === 'object' && x !== null) || typeof x === "function") {
+    // x.then取值报错， 直接reject并把e传出去
+    try {
       let then = x.then;
-      then.call(x);
-    } else {
-      // 不是promise就是异常了
-      reject(x);
+      // 如果then是一个函数，用call执行then， x作为this
+      // 为了防止用户写的逻辑是x多次调用then后报错如 
+      // {
+      // index：0
+      // then(){if(++index === 2){throw new Error()}}
+      // }
+      if (typeof then === "function") {
+        then.call(x, y => {
+          // 因为resolve中返回的可能还是promise， 并且有延迟效果， 所以，需要等待所有promise状态
+          // 都执行后， 再执行then
+          resolvePromise(promise2, y, resolve, reject);
+        }, e => {
+          reject(e);
+        })
+      } else {
+        // 不是promise就是对象， 按正常对象值处理
+        resolve(x);
+      }
+    } catch (e) {
+      reject(e)
     }
   } else {
     // 不是对象， 不是function， 就是普通值， 直接i盗用resolve
@@ -34,9 +57,9 @@ class Promise {
     // 存储promise执行状态相关
     this.status = PENDING;
     // 存储FULFILLED状态的数据
-    this.value;
+    this.value = undefined;
     // 存储REJECTED状态的原因
-    this.reason;
+    this.reason = undefined;
     // 成功的函数列表
     this.onFulfiledCallbacks = [];
     this.onRejectedCallbacks = [];
@@ -77,11 +100,13 @@ class Promise {
     5.onFulfiled执行可以返回值， 被下一个then获取使用，值可以为普通值（不是promise，不是异常）、异常、promise
   */
   then (onFulfiled, onRejected) {
+    // 如果then中不传resolve、reject 用默认函数往下传递
+    onFulfiled = typeof onFulfiled === "function" ? onFulfiled : val => val;
+    onRejected = typeof onRejected === "function" ? onRejected : e => { throw e };
     // 返回promise供链式调用
     let promise2 = new Promise((resolve, reject) => {
       // 如果是成功调用成功函数
       if (this.status === FULFILLED) {
-
         // 处理 x的类型需要抽离公共方法
         /* 
           1.如果用户在then中返回的是promise2， 因为 promise2还没实例化完， 所以访问会不存在
@@ -112,14 +137,13 @@ class Promise {
       // 如果是PENDING状态， 需要将成功和失败的两个函数存储起来， 当状态改编后调用
       if (this.status === PENDING) {
         this.onFulfiledCallbacks.push(() => {
-
           // 处理 x的类型需要抽离公共方法
           setTimeout(() => {
             try {
               let x = onFulfiled(this.value);
               resolvePromise(promise2, x, resolve, reject);
-            } catch (err) {
-              reject(err)
+            } catch (e) {
+              reject(e);
             }
           }, 0);
         });
@@ -129,13 +153,79 @@ class Promise {
               let x = onRejected(this.reason);
               resolvePromise(promise2, x, resolve, reject);
             } catch (err) {
-              reject(err)
+              reject(err);
             }
           }, 0);
         });
       }
     })
     return promise2;
+  }
+  // 失败
+  catch (errCallback) {
+    return this.then(null, errCallback);
+  }
+  static resolve (res) {
+    return new Promise((resolve, reject) => {
+      resolve(res)
+    })
+  }
+  static reject (e) {
+    return new Promise((resolve, reject) => {
+      reject(e)
+    })
+  }
+  // 不是最后执行的意思，只要写了不管成功还是失败都要执行
+  finally () {
+
+  }
+  // 一个陈宫就成功， 一个失败就失败，以第一个为准
+  static race (promises) {
+    return new Promise((resolve, reject) => {
+      for (let i = 0; i < promises.length; i++) {
+        const promise = promises[i];
+        if (isPromise(promise)) {
+          promise.then((res) => {
+            resolve(res);
+          }).catch(e => {
+            console.log(e)
+          })
+        } else if (typeof promise === "function") {
+          resolve(promise());
+        } else {
+          resolve(res);
+        }
+      }
+    })
+  }
+  // 全部成功才成功，一个失败都失败
+  static all (promises) {
+    return new Promise((resolve, reject) => {
+      let result = [];
+      let index = 0;
+      const processData = (res, i) => {
+        result[i] = res;
+        if (++index === promises.length) {
+          resolve(result);
+        }
+      }
+      for (let i = 0; i < promises.length; i++) {
+        const promise = promises[i];
+        if (isPromise(promise)) {
+          // promise处理
+          promise.then((res => {
+            processData(res, i);
+          })).catch(e => {
+            reject(e);
+          })
+        } else if (typeof promise === "function") {
+          // 函数处理
+          processData(promise(), i);
+        } else {
+          processData(promise, i);
+        }
+      }
+    })
   }
 }
 module.exports = Promise;
