@@ -64,6 +64,9 @@ class Promise {
     this.onFulfiledCallbacks = [];
     this.onRejectedCallbacks = [];
     const resolve = (value) => {
+      if(value instanceof Promise) {
+        value.then(resolve, reject);
+      }
       if (this.status === PENDING) {
         // 改变状态
         this.status = FULFILLED;
@@ -176,8 +179,12 @@ class Promise {
     })
   }
   // 不是最后执行的意思，只要写了不管成功还是失败都要执行
-  finally () {
-
+  finally (callback) {
+    return this.then(value => {
+      return Promise.resolve(callback()).then(()=>{return value});
+    },e=>{
+      return Promise.resolve(callback()).then(() =>{ throw e});
+    })
   }
   // 一个陈宫就成功， 一个失败就失败，以第一个为准
   static race (promises) {
@@ -185,13 +192,7 @@ class Promise {
       for (let i = 0; i < promises.length; i++) {
         const promise = promises[i];
         if (isPromise(promise)) {
-          promise.then((res) => {
-            resolve(res);
-          }).catch(e => {
-            console.log(e)
-          })
-        } else if (typeof promise === "function") {
-          resolve(promise());
+          promise.then(resolve, reject)
         } else {
           resolve(res);
         }
@@ -218,9 +219,6 @@ class Promise {
           })).catch(e => {
             reject(e);
           })
-        } else if (typeof promise === "function") {
-          // 函数处理
-          processData(promise(), i);
         } else {
           processData(promise, i);
         }

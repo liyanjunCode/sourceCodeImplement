@@ -1,5 +1,7 @@
 
+const { reject } = require('./promise.js');
 const Promise = require('./promise.js')
+const fs = require("fs").promises;
 // const promise = new Promise((resolve, reject) => {
 //   reject("1111");
 // })
@@ -47,12 +49,35 @@ const Promise = require('./promise.js')
 // }), { a: 1 }, "1111"]).then(res => {
 //   console.log(res, "1111----")
 // })
-Promise.race([new Promise((resolve, reject) => {
-  setTimeout(() => {
-    resolve(22222)
-  }, 1000);
-}), new Promise((resolve, reject) => {
-  reject("500失败")
-})]).then(res => {
-  console.log(res, "1111----")
+// Promise.race([new Promise((resolve, reject) => {
+//   setTimeout(() => {
+//     resolve(22222)
+//   }, 1000);
+// }), new Promise((resolve, reject) => {
+//   // reject("500失败")
+//   setTimeout(()=>{resolve(11111)}, 2000)
+// })]).then(res => {
+//   console.log(res, "1111----")
+// }).catch((e) => {
+//   console.log(e, "-----------")
+// })
+// Promise.race([fs.readFile("./age.txt", "utf8"), fs.readFile("./name.txt", "utf8")]).then((res)=>{
+//   console.log(res)
+// }).catch(e=>{
+//   console.log(e)
+// })
+// Promise.reject(111).finally(()=>{
+//   console.log(55555)
+// }).then(res=>{
+//   console.log(res, "chengong")
+// }).catch(e=>{
+//   console.log(e, "shibai")
+// })
+
+Promise.resolve(new Promise((resolve, reject) => {
+  setTimeout(()=> {
+    resolve(57583)
+  }, 500)
+})).then(res=>{
+  console.log(res, "最后")
 })
