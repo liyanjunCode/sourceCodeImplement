@@ -1,0 +1,21 @@
+{
+    "name": "l-webpack",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "bin": {
+        "l-webpack": "./bin/l-webpack.js"
+    },
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "@babel/generator": "^7.12.17",
+        "@babel/parser": "^7.12.17",
+        "@babel/traverse": "^7.12.17",
+        "@babel/types": "^7.12.17"
+    }
+}
