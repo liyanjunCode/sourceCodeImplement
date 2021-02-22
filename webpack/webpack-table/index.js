@@ -1,4 +1,4 @@
-const { AsyncSerialHook } = require("./tapable");
+const { AsyncSerialHook, AsyncParallelHook, AsyncSerialBailHook } = require("./tapable");
 
 /* 
     synchook
@@ -138,17 +138,21 @@ const { AsyncSerialHook } = require("./tapable");
 //         }
 //     }
 //     tap () {
-//         this.hook.sync.tapPromise("name", (name, resolve) => {
-//             setTimeout(() => {
-//                 console.log("node", name);
-//                 resolve()
-//             }, 500)
+//         this.hook.sync.tapPromise("name", (name) => {
+//             return new Promise((resolve, reject) => {
+//                 setTimeout(() => {
+//                     console.log("node", name);
+//                     resolve()
+//                 }, 1000)
+//             })
 //         })
-//         this.hook.sync.tapPromise("name", (name, resolve) => {
-//             setTimeout(() => {
-//                 console.log("react", name);
-//                 resolve()
-//             }, 1000)
+//         this.hook.sync.tapPromise("name", (name) => {
+//             return new Promise((resolve, reject) => {
+//                 setTimeout(() => {
+//                     console.log("react", name);
+//                     resolve()
+//                 }, 500)
+//             })
 //         })
 //     }
 //     start () {
@@ -189,33 +193,95 @@ AsyncSerialHook 普通版
 /* 
 AsyncSerialHook promise版
 */
+// class Lesson {
+//     constructor() {
+//         this.hook = {
+//             sync: new AsyncSerialHook()
+//         }
+//     }
+//     tap () {
+//         this.hook.sync.tapPromise("name", (name) => {
+//             return new Promise((resolve, reject) => {
+//                 setTimeout(() => {
+//                     console.log("node", name);
+//                     resolve()
+//                 }, 1000)
+//             })
+//         })
+//         this.hook.sync.tapPromise("name", (name) => {
+//             return new Promise((resolve, reject) => {
+//                 setTimeout(() => {
+//                     console.log("react", name);
+//                     resolve()
+//                 }, 500)
+//             })
+//         })
+//     }
+//     start () {
+//         this.hook.sync.promise("webpack").then(function () {
+//             console.log("执行完了end")
+//         })
+//     }
+// }
+/* 
+AsyncSerialBailHook 普通版
+*/
+// class Lesson {
+//     constructor() {
+//         this.hook = {
+//             sync: new AsyncSerialBailHook()
+//         }
+//     }
+//     tap () {
+//         this.hook.sync.tapAsync("name", (data, cb) => {
+//             setTimeout(() => {
+//                 console.log("node", data);
+//                 cb(null, "课程1")
+//             }, 1000)
+//         })
+//         this.hook.sync.tapAsync("name", (data, cb) => {
+//             setTimeout(() => {
+//                 console.log("react", data);
+//                 cb(null, "课程2")
+//             }, 500)
+//         })
+//     }
+//     start () {
+//         this.hook.sync.callAsync("webpack", function (data) {
+//             console.log("执行完了end", data)
+//         })
+//     }
+// }
+/* 
+AsyncSerialBailHook promise版
+*/
 class Lesson {
     constructor() {
         this.hook = {
-            sync: new AsyncSerialHook()
+            sync: new AsyncSerialBailHook()
         }
     }
     tap () {
-        this.hook.sync.tapPromise("name", (name) => {
+        this.hook.sync.tapPromise("name", (data) => {
             return new Promise((resolve, reject) => {
                 setTimeout(() => {
-                    console.log("node", name);
-                    resolve()
+                    console.log("node", data);
+                    resolve("task1")
                 }, 1000)
             })
         })
-        this.hook.sync.tapPromise("name", (name) => {
+        this.hook.sync.tapPromise("name", (data) => {
             return new Promise((resolve, reject) => {
                 setTimeout(() => {
-                    console.log("react", name);
-                    resolve()
+                    console.log("react", data);
+                    resolve("task2")
                 }, 500)
             })
         })
     }
     start () {
-        this.hook.sync.promise("webpack").then(function () {
-            console.log("执行完了end")
+        this.hook.sync.promise("webpack").then(function (data) {
+            console.log("执行完了end", data)
         })
     }
 }

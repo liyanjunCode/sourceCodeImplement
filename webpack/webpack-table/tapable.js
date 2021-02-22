@@ -85,16 +85,8 @@ class AsyncParallelHook {
         })
     }
     promise (...args) {
-        return new Promise((resolve, reject) => {
-            let index = 0;
-            const next = () => {
-                index++;
-                if (index === this.hooks.length) { resolve() }
-            }
-            this.hooks.forEach(callback => {
-                callback(...args, next)
-            })
-        })
+        const callBackList = this.hooks.map(callback => callback(...args))
+        return Promise.all(callBackList);
     }
 }
 // 异步串行钩子
@@ -122,8 +114,52 @@ class AsyncSerialHook {
         return new Promise((resolve, reject) => {
             const [firstCallback, ...argsCallback] = this.hooks;
             argsCallback.reduce((p, n, index) => {
-                if (index == argsCallback.length - 1) { resolve() }
-                return p.then(() => n(...args));
+                return p.then(() => {
+                    index++;
+                    return n(...args).then(() => {
+                        if (index == argsCallback.length) { return resolve() }
+                    });
+                });
+            }, firstCallback(...args))
+        })
+    }
+}
+// 异步串行保险钩子
+class AsyncSerialBailHook {
+    constructor(list) {
+        this.hooks = [];
+    }
+    tapAsync (name, callback) {
+        this.hooks.push(callback);
+    }
+    tapPromise (name, callback) {
+        this.hooks.push(callback);
+    }
+    callAsync (...args) {
+        const finalFunciton = args.pop();
+        let index = 0;
+        const next = (err, data) => {
+            if (index === this.hooks.length) { return finalFunciton(data) };
+            const callBack = this.hooks[index++];
+            if (index === 0) {
+                callBack(...args, next);
+            } else {
+                callBack(data, next);
+            }
+        }
+        next()
+
+    }
+    promise (...args) {
+        return new Promise((resolve, reject) => {
+            const [firstCallback, ...argsCallback] = this.hooks;
+            argsCallback.reduce((p, n, index) => {
+                return p.then((data) => {
+                    index++;
+                    return n(...args).then(() => {
+                        if (index == argsCallback.length) { return resolve(data) }
+                    });
+                });
             }, firstCallback(...args))
         })
     }
@@ -134,5 +170,6 @@ module.exports = {
     SyncWaterfallHook,
     SyncLoopHook,
     AsyncParallelHook,
-    AsyncSerialHook
+    AsyncSerialHook,
+    AsyncSerialBailHook
 }

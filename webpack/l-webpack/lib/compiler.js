@@ -1,7 +1,10 @@
 const fs = require("fs");
 const path = require("path");
 const { parse } = require("@babel/parser");
-const { traverse } = require("@babel/traverse");
+const traverse = require("@babel/traverse").default;
+const t = require("@babel/types");
+const genarator = require("@babel/generator").default;
+const ejs = require("ejs");
 class Compiler {
     constructor(config) {
         this.entyId;
@@ -20,18 +23,40 @@ class Compiler {
         if (isEntry) {
             this.entyId = moduleName;
         }
-        const { sourceCode, dependencies } = this.parse(content);
+        const { sourceCode, dependencies } = this.parse(content, path.dirname(path.relative(this.root, modulePath)));
         this.modules[moduleName] = sourceCode;
+        dependencies.forEach(dep => {
+            this.buildModule(path.resolve(this.root, dep), false);
+        })
     }
-    parse (content) {
+    parse (content, parentPath) {
+        const dependencies = [];
         const ast = parse(content);
         traverse(ast, {
-
+            enter (paths) {
+                if (paths.node.type === "CallExpression") {
+                    if (paths.node.callee.name === "require") {
+                        paths.node.callee.name = "__webpack__require";
+                        let moduleName = paths.node.arguments[0].value;
+                        moduleName = path.extname(moduleName) ? moduleName : moduleName + ".js"
+                        moduleName = "./" + path.join(parentPath, moduleName);
+                        dependencies.push(moduleName);
+                        paths.node.arguments = [t.stringLiteral(moduleName)];
+                    }
+                }
+            },
         })
-        return {}
+        const sourceCode = genarator(ast);
+        return { sourceCode, dependencies }
     }
     emitFile () {
-
+        // 获取到模板内容
+        const content = this.getContent(path.resolve(__dirname, './temp.ejs'));
+        const main = path.resolve(this.config.output, this.config.filename);
+        const code = ejs.render(content, { entryId: this.entryId, modules: this.modules });
+        this.assets = {};
+        this.assets[main] = code;
+        fs.writeFileSync(main)
     }
     run () {
         // 解析模块
