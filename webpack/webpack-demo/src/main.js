@@ -1,2 +1,3 @@
-const b = require("./b.js")
+const b = require("./b.js");
+require("./index.less");
 console.log(b)

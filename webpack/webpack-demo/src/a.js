@@ -1,4 +1,3 @@
+
 const a = "wo shi a"
-module.exports = {
-    a
-}
+module.exports = a
