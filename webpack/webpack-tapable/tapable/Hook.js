@@ -19,17 +19,15 @@ class Hook {
         this._taps.push(item);
     }
     call (...args) {
-        console.log(this, "this")
         const method = this._createCall();
         // method是compiler编译后的函数
-        method.call(this, args)
+        method.apply(this, args)
     }
     _createCall () {
-        console.log(this, "this")
         // 因为complier，定义在子类， 所以需要用call转移this指向
         return this.compiler({
-            taps: this.taps,
-            args: this.args
+            taps: this._taps,
+            args: this._args
         })
     }
 }
