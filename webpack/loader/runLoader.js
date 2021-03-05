@@ -68,11 +68,6 @@ function runLoader (options, finalCallBack) {
             return loaderContxt.loaders[loaderContxt.loaderIndex].data;
         }
     })
-    Object.defineProperty(loaderContxt, "async", {
-        get () {
-            return loaderContxt.async();
-        }
-    })
     // 先执行pitch
     iteratePitchingLoaders(loaderContxt, finalCallBack);
     function iteratePitchingLoaders (loaderContxt, finalCallBack) {
@@ -85,17 +80,18 @@ function runLoader (options, finalCallBack) {
         // 从loaders中取出当前loader 的pitch
         const currentLoaderObject = loaderContxt.loaders[loaderContxt.loaderIndex];
         const pitchFn = currentLoaderObject.pitch;
-        if (pitchFn) {
+        let res;
+        if (pitchFn && (res = pitchFn.call(loaderContxt, loaderContxt.remainingRequest, loaderContxt.previousRequest, loaderContxt.data))) {
             // 如果此loader定义了pitch就执行pitch函数
-            const res = pitchFn.call(loaderContxt, loaderContxt.remainingRequest, loaderContxt.previousRequest, loaderContxt.data);
+
             // 如果有返回值，直接跳过剩下loader的pitch和source，和当前loader的normal，往回执行normalloader
-            if (res) {
-                loaderContxt.loaderIndex--;
-                return iterateNormalLoader(loaderContxt, finalCallBack);
-            } else {
-                loaderContxt.loaderIndex++;
-                iteratePitchingLoaders(loaderContxt, finalCallBack);
-            }
+            // if (res) {
+            loaderContxt.loaderIndex--;
+            return iterateNormalLoader(loaderContxt, res, finalCallBack);
+            // } else {
+            //     loaderContxt.loaderIndex++;
+            //     iteratePitchingLoaders(loaderContxt, finalCallBack);
+            // }
         } else {
             // 未定义loader就寻找下一个loader是否定义pitch函数
             loaderContxt.loaderIndex++;
@@ -134,29 +130,26 @@ function runLoader (options, finalCallBack) {
         // loader是输出二进制聂荣还是字符串内容
         source = convertSource(source, normalFn.raw);
         runAsyncOrSyncLoader(normalFn, loaderContxt, source, finalCallBack);
-        // // 这里还要判断loader是否为异步执行，loader函数中可以通过this.async获取异步执行函数
-        // loaderContxt.async = runAsyncOrSyncLoader.call(loaderContxt);
-        // // 如果当前loader返回了结果， 就把结果传递给下一个loader，否则传递源文件的代码
-        // result = normalFn.call(loaderContxt, result || source);
-        // // 获取下一个loader,并执行
-        // loaderContxt.loaderIndex--;
-        // iterateNormalLoader(loaderContxt, result, finalCallBack);
     }
     function runAsyncOrSyncLoader (normalFn, loaderContxt, source, finalCallBack) {
         // 默认是同步执行
         let isSync = true;
-        const innerCallback = loaderContxt.callback = function () {
+        // 提供给使用者的函数
+        const innerCallback = loaderContxt.callback = function (err, source) {
             // /执行完一个loader后就重置为同步执行
-            isSync = true;
-            return normalFn.call(loaderContxt, result || source);
+            iterateNormalLoader(loaderContxt, source, finalCallBack);
         }
-        return function () {
-            if (!isSync) {
-                innerCallback();
-            } else {
-                loaderContxt.loaderIndex--;
-                iterateNormalLoader(loaderContxt, source, finalCallBack);
-            }
+        // 改变loader为异步获取结果， 并将继续执行下一个loader的控制权移交给用户
+        loaderContxt.async = function () {
+            isSync = false
+            return innerCallback;
+        }
+        loaderContxt.loaderIndex--;
+        // 不管同步异步获取结果都要执行loader
+        let result = normalFn.call(loaderContxt, source,);
+        // 如果是同步loader代码， 就继续调用iterateNormalLoader调用下一个loader
+        if (isSync) {
+            iterateNormalLoader(loaderContxt, result || source, finalCallBack);
         }
     }
 }
