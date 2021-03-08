@@ -11,14 +11,85 @@ module.exports = {
     },
     module: {
         rules: [
+            // {
+            //     test: /\.js$/,
+            //     use: [
+            //         "loader1",
+            //         "loader2",
+            //         "loader3",
+            //     ]
+            // },
+            // {
+            //     test: /\.js$/,
+            //     use: [
+            //         {
+            //             loader: "normal-loader",
+
+            //         }
+            //     ],
+            //     // enforce: "normal"
+            // },
+            // {
+            //     test: /\.js$/,
+            //     use: [
+            //         {
+            //             loader: "post-loader",
+
+            //         }
+            //     ],
+            //     enforce: "post"
+            // },
+            // {
+            //     test: /\.js$/,
+            //     use: [
+            //         {
+            //             loader: "prev-loader",
+
+            //         }
+            //     ],
+            //     enforce: "pre"
+            // },
+            // {
+            //     test: /\.js$/,
+            //     use: [
+            //         {
+            //             loader: "inline-loader",
+
+            //         },
+            //     ],
+            //     enforce: "inline"
+            // },
+            // {
+            //     test: /\.js$/,
+            //     use: [
+            //         {
+            //             loader: "banner-loader",
+            //             options: {
+
+            //                 text: "/* 这是版权声明 */",
+            //                 filename: path.resolve(__dirname, "./banner.js")
+            //             }
+            //         }
+
+            //     ]
+            // },
+            // {
+            //     test: /\.js$/,
+            //     use: [
+            //         {
+            //             loader: "file-loader"
+            //         }
+
+            //     ]
+            // },
             {
-                test: /\.js$/,
+                test: /\.css$/,
                 use: [
-                    "loader1",
-                    "loader2",
-                    "loader3",
+                    "style-loader",
+                    "css-loader"
                 ]
-            }
-        ]
+            },
+        ],
+
     }
 }

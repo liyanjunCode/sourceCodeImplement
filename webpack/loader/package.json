@@ -12,5 +12,13 @@
   "devDependencies": {
     "webpack": "^5.24.3",
     "webpack-cli": "^4.5.0"
+  },
+  "dependencies": {
+    "banner-loader": "0.0.2",
+    "css-selector-tokenizer": "^0.7.3",
+    "loader-utils": "^2.0.0",
+    "postcss": "^8.2.7",
+    "postcss-selector-parser": "^6.0.4",
+    "schema-utils": "^3.0.0"
   }
 }
